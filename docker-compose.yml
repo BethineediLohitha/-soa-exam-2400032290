@@ -1,0 +1,51 @@
+
+services:
+  postgres:
+    image: postgres:16
+    container_name: soa-postgres
+    environment:
+      POSTGRES_DB: exam_2400032290
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+    ports:
+      - "5433:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d exam_2400032290"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    image: lohitha2006/docker-backend-2400032290:latest
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: soa-backend
+    ports:
+      - "8081:8081"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/exam_2400032290
+      SPRING_DATASOURCE_USERNAME: postgres
+      SPRING_DATASOURCE_PASSWORD: ${DB_PASSWORD}
+      SPRING_DATASOURCE_DRIVER_CLASS_NAME: org.postgresql.Driver
+      SPRING_JPA_HIBERNATE_DDL_AUTO: update
+      EUREKA_CLIENT_ENABLED: "false"
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  frontend:
+    image: lohitha2006/docker-frontend-2400032290:latest
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: soa-frontend
+    ports:
+      - "3000:80"
+    depends_on:
+      - backend
+
+volumes:
+  postgres_data:
